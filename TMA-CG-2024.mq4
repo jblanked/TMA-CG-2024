@@ -51,7 +51,7 @@ double dnArrow[];
 
 CIndicator indi;
 CMladenTMACG *tma;
-int maximumCandles;
+int maximumCandles, barShift;
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
@@ -65,47 +65,47 @@ int OnInit()
      }
 
 //--- indicator buffers mapping
-   if(!indi.createBuffer("Midline", DRAW_LINE, STYLE_DOT, clrDimGray, 1, 0, tmBuffer, true, INDICATOR_CALCULATIONS, 233))
+   if(!indi.createBuffer("Midline", DRAW_LINE, STYLE_DOT, clrDimGray, 1, 0, tmBuffer, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Upline", DRAW_LINE, STYLE_SOLID, clrMaroon, 2, 1, upBuffer, true, INDICATOR_CALCULATIONS, 233))
+   if(!indi.createBuffer("Upline", DRAW_LINE, STYLE_SOLID, clrMaroon, 2, 1, upBuffer, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Dnline", DRAW_LINE, STYLE_SOLID, clrDarkBlue, 2, 2, dnBuffer, true, INDICATOR_CALCULATIONS, 233))
+   if(!indi.createBuffer("Dnline", DRAW_LINE, STYLE_SOLID, clrDarkBlue, 2, 2, dnBuffer, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Buy", DRAW_ARROW, STYLE_DOT, clrRed, 1, 3, upArrow, true, INDICATOR_CALCULATIONS, 234))
+   if(!indi.createBuffer("Buy", DRAW_ARROW, STYLE_DOT, clrBlue, 1, 3, upArrow, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Sell", DRAW_ARROW, STYLE_DOT, clrBlue, 1, 4, dnArrow, true, INDICATOR_CALCULATIONS, 233))
+   if(!indi.createBuffer("Sell", DRAW_ARROW, STYLE_DOT, clrRed, 1, 4, dnArrow, true, INDICATOR_DATA, 234))
      {
       return INIT_FAILED;
      }
 #ifdef __MQL4__
-   if(!indi.createBuffer(NULL, DRAW_NONE, STYLE_SOLID, clrNONE, 1, 5, wuBuffer, false, INDICATOR_DATA, 242))
+   if(!indi.createBuffer(NULL, DRAW_NONE, STYLE_SOLID, clrNONE, 1, 5, wuBuffer, false, INDICATOR_CALCULATIONS, 242))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer(NULL, DRAW_NONE, STYLE_SOLID, clrNONE, 1, 6, wdBuffer, false, INDICATOR_DATA, 241))
+   if(!indi.createBuffer(NULL, DRAW_NONE, STYLE_SOLID, clrNONE, 1, 6, wdBuffer, false, INDICATOR_CALCULATIONS, 241))
      {
       return INIT_FAILED;
      }
 #else
-   if(!indi.createBuffer("Buffer 5", DRAW_NONE, STYLE_SOLID, clrNONE, 1, 5, wuBuffer, false, INDICATOR_DATA, 242))
+   if(!indi.createBuffer("Buffer 5", DRAW_NONE, STYLE_SOLID, clrNONE, 1, 5, wuBuffer, false, INDICATOR_CALCULATIONS, 242))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Buffer 6", DRAW_NONE, STYLE_SOLID, clrNONE, 1, 6, wdBuffer, false, INDICATOR_DATA, 241))
+   if(!indi.createBuffer("Buffer 6", DRAW_NONE, STYLE_SOLID, clrNONE, 1, 6, wdBuffer, false, INDICATOR_CALCULATIONS, 241))
      {
       return INIT_FAILED;
      }
@@ -168,15 +168,23 @@ int OnCalculate(const int rates_total,
 //--- run tma
    tma.run(trueLimit > inpMaximumCandles ? inpMaximumCandles : trueLimit);
 //--- copy array valus
-   for(int i = trueLimit > inpMaximumCandles ? inpMaximumCandles : trueLimit - 1; i >= 0; i--)
+   for(int i = trueLimit > inpMaximumCandles ? inpMaximumCandles - 1 : trueLimit - 1; i >= 0; i--)
      {
-      wuBuffer[i] = tma.wuBuffer[i];
-      wdBuffer[i] = tma.wdBuffer[i];
-      tmBuffer[i] = tma.tmBuffer[i];
-      upBuffer[i] = tma.upBuffer[i];
-      dnBuffer[i] = tma.dnBuffer[i];
-      upArrow[i] = tma.upArrow[i];
-      dnArrow[i] = tma.dnArrow[i];
+
+      barShift = iBarShift(_Symbol, inpTimeFrame, iTime(_Symbol, PERIOD_CURRENT, i));
+
+      if(barShift >= ArraySize(tma.wdBuffer))
+        {
+         continue;
+        }
+
+      wuBuffer[i] = tma.wuBuffer[barShift];
+      wdBuffer[i] = tma.wdBuffer[barShift];
+      tmBuffer[i] = tma.tmBuffer[barShift];
+      upBuffer[i] = tma.upBuffer[barShift];
+      dnBuffer[i] = tma.dnBuffer[barShift];
+      upArrow[i] = tma.upArrow[barShift];
+      dnArrow[i] = tma.dnArrow[barShift];
      }
 //--- return value of prev_calculated for next call
    return(rates_total);
