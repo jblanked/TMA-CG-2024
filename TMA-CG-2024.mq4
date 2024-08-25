@@ -12,11 +12,11 @@
 #property indicator_plots 7
 
 /*
-   - Thread:
-   - Download indicator source code:
-   - Download library source code:
+   - Thread: https://www.forexfactory.com/
+   - Download indicator source code: https://github.com/jblanked/TMA-CG-2024
+   - Download library source code: https://github.com/jblanked/TMA-CG-2024/blob/main/TMA-CG-2024.mqh
 
-   All credits due to Mladen.
+   All credits are due to Mladen.
 
    Created August 25th, 2024 (jblanked)
       - created a class to simplfy use in Indicators, Expert Advisors, and more
@@ -32,8 +32,8 @@
       - limit to draw maximum 5000 candles
 */
 
-#include <jb-indicator.mqh>
-#include <tma-cg-2024.mqh>
+#include <jb-indicator.mqh> // download from https://github.com/jblanked/MQL-Library/blob/main/JB-Indicator.mqh
+#include <tma-cg-2024.mqh> // download from https://github.com/jblanked/TMA-CG-2024/blob/main/TMA-CG-2024.mqh
 
 input ENUM_TIMEFRAMES      inpTimeFrame      = PERIOD_CURRENT; // Timeframe
 input int                  inpHalfLength     = 56;             // Half Length
