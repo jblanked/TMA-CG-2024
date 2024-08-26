@@ -6,7 +6,7 @@
 #property copyright "Copyright 2024, JBlanked."
 #property link      "https://www.jblanked.com/"
 #property description "Non-repainting triangular moving average original coded by Mladen. All credits to him for the idea. Edits by JBlanked, rajiv, and eevviill."
-#property version   "1.00"
+#property version   "1.01"
 #property indicator_chart_window
 #property indicator_buffers 7
 #property indicator_plots 7
@@ -30,16 +30,25 @@
       - implemented CIndicator class
       - switched string input TimeFrame to ENUM_TIMEFRAMES input inpTimeframe
       - limit to draw maximum 5000 candles
+
+   Update August 26th, 2024 (jblanked) - v1.01
+      - added color inputs
+      - updated candle count to avoid "Array Out of Range" warnings
 */
 
 #include <jb-indicator.mqh> // download from https://github.com/jblanked/MQL-Library/blob/main/JB-Indicator.mqh
 #include <tma-cg-2024.mqh> // download from https://github.com/jblanked/TMA-CG-2024/blob/main/TMA-CG-2024.mqh
 
-input ENUM_TIMEFRAMES      inpTimeFrame      = PERIOD_CURRENT; // Timeframe
-input int                  inpHalfLength     = 56;             // Half Length
-input ENUM_APPLIED_PRICE   inpAppliedPrice   = PRICE_WEIGHTED; // Applied Price
-input double               inpBandsDeviation = 1.618;          // Bands Deviation
-input int                  inpMaximumCandles = 5000;           // Maximum Candles
+input ENUM_TIMEFRAMES      inpTimeFrame         = PERIOD_CURRENT;// Timeframe
+input int                  inpHalfLength        = 56;            // Half Length
+input ENUM_APPLIED_PRICE   inpAppliedPrice      = PRICE_WEIGHTED;// Applied Price
+input double               inpBandsDeviation    = 1.618;         // Bands Deviation
+input int                  inpMaximumCandles    = 5000;          // Maximum Candles
+input color                inpMidLineColor      = clrDimGray;    // Mid Line Color
+input color                inpTopBandColor      = clrMaroon;     // Top Band Color
+input color                inpBottomBandColor   = clrDarkBlue;   // Bottom Band Color
+input color                inpBuyArrowColor     = clrBlue;       // Buy Arrow Color
+input color                inpSellArrowColor    = clrRed;        // Sell Arrow Color
 
 double tmBuffer[];
 double upBuffer[];
@@ -65,27 +74,27 @@ int OnInit()
      }
 
 //--- indicator buffers mapping
-   if(!indi.createBuffer("Midline", DRAW_LINE, STYLE_DOT, clrDimGray, 1, 0, tmBuffer, true, INDICATOR_DATA, 233))
+   if(!indi.createBuffer("Mid Line", DRAW_LINE, STYLE_DOT, inpMidLineColor, 1, 0, tmBuffer, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Upline", DRAW_LINE, STYLE_SOLID, clrMaroon, 2, 1, upBuffer, true, INDICATOR_DATA, 233))
+   if(!indi.createBuffer("Top Band", DRAW_LINE, STYLE_SOLID, inpTopBandColor, 2, 1, upBuffer, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Dnline", DRAW_LINE, STYLE_SOLID, clrDarkBlue, 2, 2, dnBuffer, true, INDICATOR_DATA, 233))
+   if(!indi.createBuffer("Bottom Band", DRAW_LINE, STYLE_SOLID, inpBottomBandColor, 2, 2, dnBuffer, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Buy", DRAW_ARROW, STYLE_DOT, clrBlue, 1, 3, upArrow, true, INDICATOR_DATA, 233))
+   if(!indi.createBuffer("Buy", DRAW_ARROW, STYLE_DOT, inpBuyArrowColor, 1, 3, upArrow, true, INDICATOR_DATA, 233))
      {
       return INIT_FAILED;
      }
 
-   if(!indi.createBuffer("Sell", DRAW_ARROW, STYLE_DOT, clrRed, 1, 4, dnArrow, true, INDICATOR_DATA, 234))
+   if(!indi.createBuffer("Sell", DRAW_ARROW, STYLE_DOT, inpSellArrowColor, 1, 4, dnArrow, true, INDICATOR_DATA, 234))
      {
       return INIT_FAILED;
      }
@@ -165,15 +174,24 @@ int OnCalculate(const int rates_total,
      {
       trueLimit++;
      }
+//--- set max candles
+   if(Bars(_Symbol, PERIOD_CURRENT) < trueLimit)
+     {
+      maximumCandles = Bars(_Symbol, PERIOD_CURRENT) > inpMaximumCandles ? inpMaximumCandles : Bars(_Symbol, PERIOD_CURRENT);
+     }
+   else
+     {
+      maximumCandles = trueLimit > inpMaximumCandles ? inpMaximumCandles : trueLimit;
+     }
 //--- run tma
-   tma.run(trueLimit > inpMaximumCandles ? inpMaximumCandles : trueLimit);
+   tma.run(maximumCandles + 3);
 //--- copy array valus
-   for(int i = trueLimit > inpMaximumCandles ? inpMaximumCandles - 1 : trueLimit - 1; i >= 0; i--)
+   for(int i = maximumCandles - 1; i >= 0; i--)
      {
 
       barShift = iBarShift(_Symbol, inpTimeFrame, iTime(_Symbol, PERIOD_CURRENT, i));
 
-      if(barShift >= ArraySize(tma.wuBuffer))
+      if(barShift >= ArraySize(tma.wuBuffer) || barShift < 0)
         {
          continue;
         }
