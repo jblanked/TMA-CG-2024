@@ -173,7 +173,7 @@ int OnCalculate(const int rates_total,
 
       barShift = iBarShift(_Symbol, inpTimeFrame, iTime(_Symbol, PERIOD_CURRENT, i));
 
-      if(barShift >= ArraySize(tma.wdBuffer))
+      if(barShift >= ArraySize(tma.wuBuffer))
         {
          continue;
         }
