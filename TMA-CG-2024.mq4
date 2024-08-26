@@ -12,7 +12,7 @@
 #property indicator_plots 7
 
 /*
-   - Thread: https://www.forexfactory.com/
+   - Thread: https://www.forexfactory.com/thread/1300763-tma-cg-2024
    - Download indicator source code: https://github.com/jblanked/TMA-CG-2024
    - Download library source code: https://github.com/jblanked/TMA-CG-2024/blob/main/TMA-CG-2024.mqh
 

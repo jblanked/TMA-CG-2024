@@ -18,13 +18,11 @@ public:
       const int halfLength = 56,
       const ENUM_APPLIED_PRICE appliedPrice = PRICE_WEIGHTED,
       const double bandsDeviation = 1.618,
-      const int maximumBars = 5000,
-      const ENUM_TIMEFRAMES currentTimeframe = PERIOD_CURRENT
+      const int maximumBars = 5000
    )
      {
       this.m_symbol           = symbol;            // symbol
-      this.m_timeframe        = timeframe;         // timeframe
-      this.m_currentTimeframe = currentTimeframe;  // current timeframe
+      this.m_timeframe        = timeframe;         // current timeframe
       this.maximumCandles     = maximumBars;       // maximum bars to calculate
       this.m_halfLength       = halfLength;        // Half Length
       this.m_appliedPrice     = appliedPrice;      // Applied Price
@@ -38,7 +36,6 @@ public:
      {
       this.m_symbol           = _Symbol;        // symbol
       this.m_timeframe        = ChartPeriod();  // timeframe
-      this.m_currentTimeframe = ChartPeriod();  // current timeframe
       this.maximumCandles     = 5000;           // maximum bars to calculate
       this.m_halfLength       = 56;             // Half Length
       this.m_appliedPrice     = PRICE_WEIGHTED; // Applied Price
@@ -71,52 +68,41 @@ public:
       // run loop
       for(int i = limitCandles - 1; i >= 0; i--)
         {
-         //--- set barshift
-         const int      shift1 = iBarShift(this.m_symbol, this.m_timeframe, iTime(this.m_symbol, this.m_currentTimeframe, i));
-         const datetime time1  = iTime(this.m_symbol, this.m_timeframe, shift1);
-
-         if(shift1 > (maximumCandles + 3 + this.m_halfLength))
-           {
-            continue;
-           }
 
          // initialize buffer values
-         tmBuffer[i] = tmBuffer[shift1];
-         upBuffer[i] = upBuffer[shift1];
-         dnBuffer[i] = dnBuffer[shift1];
+         tmBuffer[i] = tmBuffer_[i];
+         upBuffer[i] = upBuffer_[i];
+         dnBuffer[i] = dnBuffer_[i];
          upArrow[i] = EMPTY_VALUE;
          dnArrow[i] = EMPTY_VALUE;
 
          //--- set arrows and interpolate
          if(
-            iHigh(this.m_symbol, this.m_currentTimeframe, i + 1)   > upBuffer[i + 1] &&
-            iClose(this.m_symbol, this.m_currentTimeframe, i + 1)  > iOpen(this.m_symbol, this.m_currentTimeframe, i + 1) &&
-            iClose(this.m_symbol, this.m_currentTimeframe, i)    < iOpen(this.m_symbol, PERIOD_CURRENT, i)
+            iHigh(this.m_symbol, this.m_timeframe, i + 1)   > upBuffer[i + 1] &&
+            iClose(this.m_symbol, this.m_timeframe, i + 1)  > iOpen(this.m_symbol, this.m_timeframe, i + 1) &&
+            iClose(this.m_symbol, this.m_timeframe, i)    < iOpen(this.m_symbol, this.m_timeframe, i)
          )
            {
 #ifdef __MQL4__
-            upArrow[i] = iHigh(this.m_symbol, PERIOD_CURRENT, i) + iATR(this.m_symbol, PERIOD_CURRENT, 20, i);
+            dnArrow[i] = iHigh(this.m_symbol, this.m_timeframe, i) + iATR(this.m_symbol, this.m_timeframe, 20, i);
 #else
-            upArrow[i] = iHigh(this.m_symbol, PERIOD_CURRENT, i) + atr[i];
+            dnArrow[i] = iHigh(this.m_symbol, this.m_timeframe, i) + atr[i];
 #endif
            }
          if(
-            iLow(this.m_symbol, PERIOD_CURRENT, i + 1)    < dnBuffer[i + 1] &&
-            iClose(this.m_symbol, PERIOD_CURRENT, i + 1)  < iOpen(this.m_symbol, PERIOD_CURRENT, i + 1) &&
-            iClose(this.m_symbol, PERIOD_CURRENT, i)    > iOpen(this.m_symbol, PERIOD_CURRENT, i)
+            iLow(this.m_symbol, this.m_timeframe, i + 1)    < dnBuffer[i + 1] &&
+            iClose(this.m_symbol, this.m_timeframe, i + 1)  < iOpen(this.m_symbol, this.m_timeframe, i + 1) &&
+            iClose(this.m_symbol, this.m_timeframe, i)    > iOpen(this.m_symbol, this.m_timeframe, i)
          )
            {
 #ifdef __MQL4__
-            dnArrow[i] = iLow(this.m_symbol, PERIOD_CURRENT, i) - iATR(this.m_symbol, PERIOD_CURRENT, 20, i);
+            upArrow[i] = iLow(this.m_symbol, this.m_timeframe, i) - iATR(this.m_symbol, this.m_timeframe, 20, i);
 #else
-            dnArrow[i] = iLow(this.m_symbol, PERIOD_CURRENT, i) - atr[i];
+            upArrow[i] = iLow(this.m_symbol, this.m_timeframe, i) - atr[i];
 #endif
            }
 
-         if(this.m_timeframe <= Period() || shift1 == iBarShift(this.m_symbol, this.m_timeframe, iTime(this.m_symbol, PERIOD_CURRENT, i - 1)))
-            continue;
-
-         for(n = 1; i + n < Bars(this.m_symbol, PERIOD_CURRENT) && iTime(this.m_symbol, PERIOD_CURRENT, i + n) >= time1; n++)
+         for(n = 1; i + n < Bars(this.m_symbol, this.m_timeframe) && iTime(this.m_symbol, this.m_timeframe, i + n) >= iTime(this.m_symbol, this.m_timeframe, i); n++)
             continue;
 
          double factor = 1.0 / n;
@@ -140,6 +126,10 @@ public:
 
 private:
 
+   double            tmBuffer_[];
+   double            upBuffer_[];
+   double            dnBuffer_[];
+
    int               maximumCandles;   // Maximum Bars to Calculate
 
    string            m_symbol;         // Symbol
@@ -162,7 +152,7 @@ private:
    bool              init(void)
      {
 #ifdef __MQL5__
-      atrHandle = iATR(this.m_symbol, PERIOD_CURRENT, 20);
+      atrHandle = iATR(this.m_symbol, this.m_timeframe, 20);
       maHandle = iMA(this.m_symbol, this.m_timeframe, 1, 0, MODE_SMA, this.m_appliedPrice);
       return atrHandle != INVALID_HANDLE && maHandle != INVALID_HANDLE;
 #else
@@ -184,6 +174,9 @@ private:
       ArrayInitialize(atr, EMPTY_VALUE);
       ArrayInitialize(ma, EMPTY_VALUE);
 #endif
+      ArrayInitialize(tmBuffer_, EMPTY_VALUE);
+      ArrayInitialize(upBuffer_, EMPTY_VALUE);
+      ArrayInitialize(dnBuffer_, EMPTY_VALUE);
 
       //--- set as series
       ArraySetAsSeries(tmBuffer, true);
@@ -197,6 +190,9 @@ private:
       ArraySetAsSeries(atr, true);
       ArraySetAsSeries(ma, true);
 #endif
+      ArraySetAsSeries(tmBuffer_, true);
+      ArraySetAsSeries(upBuffer_, true);
+      ArraySetAsSeries(dnBuffer_, true);
 
       //---resize
       ArrayResize(tmBuffer, this.maximumCandles + 3 + this.m_halfLength);
@@ -210,17 +206,21 @@ private:
       ArrayResize(atr, this.maximumCandles + 3 + this.m_halfLength);
       ArrayResize(ma, this.maximumCandles + 3 + this.m_halfLength);
 #endif
+      ArrayResize(tmBuffer_, this.maximumCandles + 3 + this.m_halfLength);
+      ArrayResize(upBuffer_, this.maximumCandles + 3 + this.m_halfLength);
+      ArrayResize(dnBuffer_, this.maximumCandles + 3 + this.m_halfLength);
 
       this.isSetAsSeries = true;
      }
 
-   void              calculateTma(int limit, ENUM_TIMEFRAMES timeframe) // this may need a bar shift to set the correct timeframes value
+   void              calculateTma(int limit, ENUM_TIMEFRAMES timeframe)
      {
       int i, j, k;
       double FullLength = 2.0 * this.m_halfLength + 1.0;
 
       for(i = limit; i >= 0; i--)
         {
+
 #ifdef __MQL4__
          double sum  = (this.m_halfLength + 1) * iMA(this.m_symbol, timeframe, 1, 0, MODE_SMA, this.m_appliedPrice, i);
 #else
@@ -229,6 +229,7 @@ private:
          double sumw = (this.m_halfLength + 1);
          for(j = 1, k = this.m_halfLength; j <= this.m_halfLength; j++, k--)
            {
+
 #ifdef __MQL4__
             sum  += k * iMA(this.m_symbol, timeframe, 1, 0, MODE_SMA, this.m_appliedPrice, i + j);
 #else
@@ -246,19 +247,19 @@ private:
                sumw += k;
               }
            }
-         tmBuffer[i] = sum / sumw;
+         tmBuffer_[i] = sum / sumw;
 
 #ifdef __MQL4__
-         double diff = iMA(this.m_symbol, timeframe, 1, 0, MODE_SMA, this.m_appliedPrice, i) - tmBuffer[i];
+         double diff = iMA(this.m_symbol, timeframe, 1, 0, MODE_SMA, this.m_appliedPrice, i) - tmBuffer_[i];
 #else
-         double diff = ma[i] - tmBuffer[i];
+         double diff = ma[i] - tmBuffer_[i];
 #endif
          if(i > (Bars(this.m_symbol, timeframe) - this.m_halfLength - 1))
             continue;
          if(i == (Bars(this.m_symbol, timeframe) - this.m_halfLength - 1))
            {
-            upBuffer[i] = tmBuffer[i];
-            dnBuffer[i] = tmBuffer[i];
+            upBuffer_[i] = tmBuffer_[i];
+            dnBuffer_[i] = tmBuffer_[i];
             if(diff >= 0)
               {
                wuBuffer[i] = MathPow(diff, 2);
@@ -282,8 +283,8 @@ private:
             wdBuffer[i] = (wdBuffer[i + 1] * (FullLength - 1) + MathPow(diff, 2)) / FullLength;
             wuBuffer[i] =  wuBuffer[i + 1] * (FullLength - 1) / FullLength;
            }
-         upBuffer[i] = tmBuffer[i] + this.m_bandsDeviation * MathSqrt(wuBuffer[i]);
-         dnBuffer[i] = tmBuffer[i] - this.m_bandsDeviation * MathSqrt(wdBuffer[i]);
+         upBuffer_[i] = tmBuffer_[i] + this.m_bandsDeviation * MathSqrt(wuBuffer[i]);
+         dnBuffer_[i] = tmBuffer_[i] - this.m_bandsDeviation * MathSqrt(wdBuffer[i]);
         }
      }
    //+------------------------------------------------------------------+
