@@ -134,7 +134,6 @@ private:
 
    string            m_symbol;         // Symbol
    ENUM_TIMEFRAMES   m_timeframe;      // Timeframe
-   ENUM_TIMEFRAMES   m_currentTimeframe; // Current Timeframe
    int               m_halfLength;     // Half Length
    ENUM_APPLIED_PRICE m_appliedPrice;  // Applied Price
    double            m_bandsDeviation; // Bands Deviation
