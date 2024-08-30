@@ -17,3 +17,10 @@ In this version, I:
 - Limited the drawing to a maximum of 5000 candles (user input)
 
 If you want to contribute, fork the repository and submit your changes.
+
+
+# Change Log
+
+### v1.01
+- added color inputs
+- updated candle count to avoid "Array Out of Range" warnings
