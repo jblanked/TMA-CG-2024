@@ -1,7 +1,8 @@
 # TMA-CG-2024
- Non-repainting triangular moving average original coded by Mladen, edited by JBlanked
 
-All credit goes to Mladen for his idea and humility in sharing the code (TMA-CG-Mladen-NFP)
+I’ve edited the infamous TMA-CG-Mladen-NFP.
+
+All credit goes to Mladen for his idea and humility in sharing the original TMA code.
 
 In this version, I:
 - Created a class to simplify use in Indicators, Expert Advisors, and more
